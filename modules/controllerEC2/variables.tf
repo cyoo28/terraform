@@ -27,26 +27,11 @@ variable "volume_size" {
   default     = 12
 }
 
-# variables for the security group
-variable "vpc_id" {
-  description = "VPC ID"
+variable "security_group_id" {
+  description = "Name for control plane security group"
   type        = string
 }
 
-variable "vpc_cidr" {
-  description = "VPC CIDR block"
-  type        = string
-}
-
-variable "bastion_sg_id" {
-  description = "Security group ID of the bastion host"
-  type        = string
-}
-
-variable "worker_node_sg_id" {
-  description = "Security group ID of the worker nodes"
-  type        = list(string)
-}
 
 variable "iam_instance_profile_name" {
   description = "IAM instance profile name"
@@ -58,9 +43,8 @@ variable "user_data" {
   type        = string
 }
 
-# variables for both resources
 variable "name" {
-  description = "Name prefix"
+  description = "Name prefix for the control plane node"
   type        = string
 }
 

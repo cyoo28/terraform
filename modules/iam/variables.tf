@@ -1,3 +1,4 @@
+# variables for the EC2 instance
 variable "ami_id" {
   description = "AMI ID for EC2 instance"
   type        = string
@@ -7,7 +8,7 @@ variable "ami_id" {
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
-  default     = "t2.small"
+  default     = "t2.micro"
 }
 
 variable "key_name" {
@@ -16,7 +17,7 @@ variable "key_name" {
 }
 
 variable "subnet_id" {
-  description = "Private subnet ID"
+  description = "Public subnet ID"
   type        = string
 }
 
@@ -26,24 +27,30 @@ variable "volume_size" {
   default     = 8
 }
 
-variable "security_group_id" {
-  description = "Name for worker node security group"
+# variables for the security group
+variable "vpc_id" {
+  description = "VPC ID"
   type        = string
 }
 
-
-variable "iam_instance_profile_name" {
-  description = "IAM instance profile name"
+variable "local_cidr" {
+  description = "CIDR block for your local machine to SSH in (e.g., your public IP/32)"
   type        = string
 }
 
-variable "user_data" {
-  description = "Startup script to configure control plane"
+variable "controller_sg_id" {
+  description = "Security group ID for control plane"
   type        = string
 }
 
+variable "worker_node_sg_id" {
+  description = "Security group ID for worker nodes"
+  type        = list(string)
+}
+
+# variables for both resources
 variable "name" {
-  description = "Name prefix for the worker node"
+  description = "Name prefix for the bastion host"
   type        = string
 }
 
