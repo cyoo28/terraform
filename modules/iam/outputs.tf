@@ -1,15 +1,15 @@
-output "instance_id" {
-  value = aws_instance.bastionEc2.id
+output "controller_instance_profile_name" {
+  value = aws_iam_instance_profile.controller.name
 }
 
-output "public_ip" {
-  value = aws_instance.bastionEc2.public_ip
+output "worker_instance_profile_name" {
+  value = aws_iam_instance_profile.worker.name
 }
 
-output "private_ip" {
-  value = aws_instance.bastionEc2.private_ip
+output "controller_role_arn" {
+  value = aws_iam_role.controller.arn
 }
 
-output "security_group_id" {
-  value = aws_security_group.bastionSg.id
+output "worker_role_arn" {
+  value = aws_iam_role.worker.arn
 }
