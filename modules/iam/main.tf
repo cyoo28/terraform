@@ -1,4 +1,4 @@
-resource "aws_iam_role" "controller" {
+resource "aws_iam_role" "controller_role" {
   name = "${var.controller_name}-role"
 
   assume_role_policy = jsonencode({
@@ -15,9 +15,9 @@ resource "aws_iam_role" "controller" {
   tags = var.tags
 }
 
-resource "aws_iam_role_policy" "controller" {
+resource "aws_iam_role_policy" "controller_policy" {
   name = "${var.controller_name}-policy"
-  role = aws_iam_role.controller.id
+  role = aws_iam_role.controller_role.id
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -35,14 +35,14 @@ resource "aws_iam_role_policy" "controller" {
   })
 }
 
-resource "aws_iam_instance_profile" "controller" {
+resource "aws_iam_instance_profile" "controller_profile" {
   name = "${var.controller_name}-profile"
-  role = aws_iam_role.controller.name
+  role = aws_iam_role.controller_role.name
 
   tags = var.tags
 }
 
-resource "aws_iam_role" "worker" {
+resource "aws_iam_role" "worker_role" {
   name = "${var.worker_name}-role"
 
   assume_role_policy = jsonencode({
@@ -59,9 +59,9 @@ resource "aws_iam_role" "worker" {
   tags = var.tags
 }
 
-resource "aws_iam_role_policy" "worker" {
+resource "aws_iam_role_policy" "worker_policy" {
   name = "${var.worker_name}-policy"
-  role = aws_iam_role.worker.id
+  role = aws_iam_role.worker_role.id
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -81,9 +81,9 @@ resource "aws_iam_role_policy" "worker" {
   })
 }
 
-resource "aws_iam_instance_profile" "worker" {
+resource "aws_iam_instance_profile" "worker_profile" {
   name = "${var.worker_name}-profile"
-  role = aws_iam_role.worker.name
+  role = aws_iam_role.worker_role.name
 
   tags = var.tags
 }
