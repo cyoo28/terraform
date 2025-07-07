@@ -43,7 +43,7 @@ locals {
     iam_instance_profile_name = "genai-webapp"
 }
 
-data "aws_vpc" "vpc" {
+data "aws_vpc" "ix_vpc" {
   id = local.vpc_id
 }
 
@@ -64,9 +64,9 @@ data "aws_key_pair" "existing" {
 module "sg" {
   source = "./modules/sg"
 
-  vpc_id = data.aws_vpc.vpc.id
+  vpc_id = data.aws_vpc.ix_vpc.id
   local_cidr = local.local_cidr
-  vpc_cidr = data.aws_vpc.selected.cidr_block
+  vpc_cidr = data.aws_vpc.ix_vpc.cidr_block
   bastion_name = local.bastion_name
   bastion_tags = local.bastion_tags
   controller_name = local.controller_name

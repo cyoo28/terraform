@@ -1,4 +1,4 @@
-resource "aws_instance" "worker" {
+resource "aws_instance" "workerEc2" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
   subnet_id              = var.subnet_id
@@ -6,7 +6,7 @@ resource "aws_instance" "worker" {
   key_name               = var.key_name
   iam_instance_profile   = var.iam_instance_profile_name
 
-  user_data              = var.user_data
+  #user_data              = var.user_data
 
   root_block_device {
     volume_size = var.volume_size

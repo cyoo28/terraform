@@ -6,7 +6,7 @@ resource "aws_instance" "controllerEc2" {
   key_name               = var.key_name
   iam_instance_profile   = var.iam_instance_profile_name
 
-  user_data              = var.user_data
+  #user_data              = var.user_data
 
   root_block_device {
     volume_size = var.volume_size

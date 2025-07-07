@@ -1,5 +1,5 @@
 resource "aws_security_group" "bastionSg" {
-  name        = "sg-${var.bastion_name}"
+  name        = "${var.bastion_name}-sg"
   description = "Security group for Bastion host"
   vpc_id      = var.vpc_id
 
@@ -9,14 +9,6 @@ resource "aws_security_group" "bastionSg" {
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = [var.local_cidr]
-  }
-
-  egress {
-    description = "Allow SSH to control plane/worker node SGs"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    security_groups = concat(aws_security_group.controllerSg.id, [aws_security_group.workerSg.id])
   }
 
   egress {
@@ -32,34 +24,31 @@ resource "aws_security_group" "bastionSg" {
   }, var.bastion_tags)
 }
 
+resource "aws_security_group_rule" "bastion_egress_ssh_to_controller" {
+  description              = "Allow SSH to control plane from Bastion"
+  type                     = "egress"
+  from_port                = 22
+  to_port                  = 22
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.bastionSg.id
+  source_security_group_id = aws_security_group.controllerSg.id
+  
+}
+
+resource "aws_security_group_rule" "bastion_egress_ssh_to_worker" {
+  description              = "Allow SSH to workers from Bastion"
+  type                     = "egress"
+  from_port                = 22
+  to_port                  = 22
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.bastionSg.id
+  source_security_group_id = aws_security_group.workerSg.id
+}
+
 resource "aws_security_group" "controllerSg" {
-  name        = "sg-${var.controller_name}"
+  name        = "${var.controller_name}-sg"
   description = "Security group for Kubernetes control plane node"
   vpc_id      = var.vpc_id
-
-  ingress {
-    description = "Allow SSH from Bastion host"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    security_groups = [aws_security_group.bastionSg.id]
-  }
-
-  ingress {
-    description = "Allow Kubernetes API server access (6443)"
-    from_port   = 6443
-    to_port     = 6443
-    protocol    = "tcp"
-    security_groups = concat(aws_security_group.workerSg.id, [aws_security_group.bastionSg.id])
-  }
-
-  ingress {
-    description = "Allow etcd server client API (2379-2380)"
-    from_port   = 2379
-    to_port     = 2380
-    protocol    = "tcp"
-    security_groups = [aws_security_group.controllerSg.id]
-  }
 
   ingress {
     description = "Allow ICMP from VPC CIDR"
@@ -82,50 +71,50 @@ resource "aws_security_group" "controllerSg" {
   }, var.controller_tags)
 }
 
+resource "aws_security_group_rule" "controller_ingress_ssh_from_bastion" {
+  description              = "Allow SSH from Bastion to Controller"
+  type                     = "ingress"
+  from_port                = 22
+  to_port                  = 22
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.controllerSg.id
+  source_security_group_id = aws_security_group.bastionSg.id
+}
+
+resource "aws_security_group_rule" "controller_ingress_k8s_api" {
+  description              = "Allow K8s API from Bastion"
+  type                     = "ingress"
+  from_port                = 6443
+  to_port                  = 6443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.controllerSg.id
+  source_security_group_id = aws_security_group.bastionSg.id
+}
+
+resource "aws_security_group_rule" "controller_ingress_k8s_api_worker" {
+  description              = "Allow K8s API from Worker Nodes"
+  type                     = "ingress"
+  from_port                = 6443
+  to_port                  = 6443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.controllerSg.id
+  source_security_group_id = aws_security_group.workerSg.id
+}
+
+resource "aws_security_group_rule" "controller_ingress_etcd" {
+  description              = "Allow etcd traffic within Controllers"
+  type                     = "ingress"
+  from_port                = 2379
+  to_port                  = 2380
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.controllerSg.id
+  source_security_group_id = aws_security_group.controllerSg.id
+}
+
 resource "aws_security_group" "workerSg" {
-  name        = "${var.worker_name}"
+  name        = "${var.worker_name}-sg"
   description = "Security group for Kubernetes worker node"
   vpc_id      = var.vpc_id
-
-  ingress {
-    description     = "Allow SSH from Bastion host"
-    from_port       = 22
-    to_port         = 22
-    protocol        = "tcp"
-    security_groups = [aws_security_group.bastionSg.id]
-  }
-
-  ingress {
-    description     = "Kubelet API (10250) from Controller"
-    from_port       = 10250
-    to_port         = 10250
-    protocol        = "tcp"
-    security_groups = [aws_security_group.controllerSg.id]
-  }
-
-  ingress {
-    description     = "Weave Net TCP (6783)"
-    from_port       = 6783
-    to_port         = 6783
-    protocol        = "tcp"
-    security_groups = [aws_security_group.workerSg.id]
-  }
-
-  ingress {
-    description     = "Weave Net UDP (6783)"
-    from_port       = 6783
-    to_port         = 6783
-    protocol        = "udp"
-    security_groups = [aws_security_group.workerSg.id]
-  }
-
-  ingress {
-    description     = "Weave Net TCP Fast Datapath (6784)"
-    from_port       = 6784
-    to_port         = 6784
-    protocol        = "tcp"
-    security_groups = [aws_security_group.workerSg.id]
-  }
 
   ingress {
     description = "ICMP (Ping/Diagnostics) from VPC CIDR"
@@ -146,4 +135,44 @@ resource "aws_security_group" "workerSg" {
   tags = merge({
     Name = "${var.worker_name}"
   }, var.worker_tags)
+}
+
+resource "aws_security_group_rule" "worker_ingress_ssh_from_bastion" {
+  description              = "Allow SSH from Bastion to Workers"
+  type                     = "ingress"
+  from_port                = 22
+  to_port                  = 22
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.workerSg.id
+  source_security_group_id = aws_security_group.bastionSg.id
+}
+
+resource "aws_security_group_rule" "worker_ingress_kubelet" {
+  description              = "Allow Kubelet API from Controller"
+  type                     = "ingress"
+  from_port                = 10250
+  to_port                  = 10250
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.workerSg.id
+  source_security_group_id = aws_security_group.controllerSg.id
+}
+
+resource "aws_security_group_rule" "worker_ingress_pod_network" {
+  type                     = "ingress"
+  from_port                = 0
+  to_port                  = 0
+  protocol                 = "-1"
+  security_group_id        = aws_security_group.workerSg.id
+  source_security_group_id = aws_security_group.workerSg.id
+  description              = "Allow all traffic from Worker SG (pod network)"
+}
+
+resource "aws_security_group_rule" "worker_ingress_ip_in_ip" {
+  type                     = "ingress"
+  from_port                = 0
+  to_port                  = 0
+  protocol                 = "4"  # IP-in-IP protocol number
+  security_group_id        = aws_security_group.workerSg.id
+  source_security_group_id = aws_security_group.workerSg.id
+  description              = "Allow IP-in-IP encapsulation between Worker nodes"
 }
