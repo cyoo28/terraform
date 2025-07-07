@@ -27,6 +27,12 @@ variable "volume_size" {
   default     = 12
 }
 
+variable "volume_type" {
+  description = "Root volume size in GiB"
+  type        = string
+  default     = "gp3"
+}
+
 variable "security_group_id" {
   description = "Name for control plane security group"
   type        = string
