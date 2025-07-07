@@ -26,6 +26,12 @@ variable "volume_size" {
   default     = 8
 }
 
+variable "volume_type" {
+  description = "Root volume size in GiB"
+  type        = string
+  default     = "gp3"
+}
+
 variable "security_group_id" {
   description = "Name for bastion host security group"
   type        = string
