@@ -5,41 +5,29 @@ locals {
     priv_subnet_id_2 = "subnet-06cb7f01f6d06ba37"
     key_name = "ix-key"
     local_cidr = "98.110.49.120/32"
-    common_tags = {
+    tags = {
       Project     = "genai-webapp"
       Environment = "dev"
       Owner       = "charles.yoo"
       ManagedBy   = "Terraform"
     }
+    # ec2 related variables
+    ami_id = "ami-05ffe3c48a9991133"
+    volume_type = "gp3"
     # bastion related variables
     bastion_name = "k8-bastion"
-    bastion_ami_id = "ami-05ffe3c48a9991133"
     bastion_instance_type = "t2.micro"
     bastion_volume_size = 8
-    bastion_volume_type = "gp3"
-    bastion_tags = merge({
-      Component   = "bastion-host"
-    }, local.common_tags)
     # controller related variables
     controller_name = "k8-controller"
-    controller_ami_id = "ami-05ffe3c48a9991133"
     controller_instance_type = "t2.medium"
     controller_volume_size = 12
-    controller_volume_type = "gp3"
     controller_userdata = file("${path.module}/scripts/controller_setup.sh")
-    controller_tags = merge({
-      Component   = "control-plane"
-    }, local.common_tags)
     # worker related variables
     worker_name = "k8-worker"
-    worker_ami_id = "ami-05ffe3c48a9991133"
     worker_instance_type = "t2.small"
     worker_volume_size = 8
-    worker_volume_type = "gp3"
     worker_userdata = file("${path.module}/scripts/worker_setup.sh")
-    worker_tags = merge({
-      Component   = "worker-node"
-    }, local.common_tags)
     iam_instance_profile_name = "genai-webapp"
 }
 
@@ -68,11 +56,9 @@ module "sg" {
   local_cidr = local.local_cidr
   vpc_cidr = data.aws_vpc.ix_vpc.cidr_block
   bastion_name = local.bastion_name
-  bastion_tags = local.bastion_tags
   controller_name = local.controller_name
-  controller_tags = local.controller_tags
   worker_name = local.worker_name
-  worker_tags = local.worker_tags
+  tags = local.tags
 }
 
 # IAM PROFILES
@@ -81,54 +67,54 @@ module "iam" {
 
   controller_name = local.controller_name
   worker_name = local.worker_name
-  tags = local.common_tags
+  tags = local.tags
 }
 
 # BASTION HOST
-module "bastionEC2" {
-  source = "./modules/bastionEC2"
+module "ec2" {
+  source = "./modules/ec2"
 
-  ami_id = local.bastion_ami_id
+  ami_id = local.ami_id
   instance_type = local.bastion_instance_type
   key_name = local.key_name
   subnet_id = local.pub_subnet_id
   volume_size = local.bastion_volume_size
-  volume_type = local.bastion_volume_type
+  volume_type = local.volume_type
   security_group_id  = module.sg.bastion_security_group_id
   name = local.bastion_name
-  tags = local.bastion_tags
+  tags = local.tags
 }
 
 # CONTROL PLANE EC2
-module "controllerEC2" {
-  source = "./modules/controllerEC2"
+module "ec2" {
+  source = "./modules/ec2"
 
-  ami_id = local.controller_ami_id
+  ami_id = local.ami_id
   instance_type = local.controller_instance_type
   key_name = local.key_name
   subnet_id = local.priv_subnet_id_1
   volume_size = local.controller_volume_size
-  volume_type = local.controller_volume_type
+  volume_type = local.volume_type
   security_group_id  = module.sg.controller_security_group_id
   iam_instance_profile_name = module.iam.controller_instance_profile_name
-  user_data = local.controller_userdata
+  #user_data = local.controller_userdata
   name = local.controller_name
-  tags = local.controller_tags
+  tags = local.tags
 }
 
-# WORKER EC2 INSTANCES (could be count or for_each)
-module "workerEC2" {
-  source = "./modules/workerEC2"
+# WORKER EC2 INSTANCES
+module "ec2" {
+  source = "./modules/ec2"
 
-  ami_id = local.worker_ami_id
+  ami_id = local.ami_id
   instance_type = local.worker_instance_type
   key_name = local.key_name
   subnet_id = local.priv_subnet_id_2
   volume_size = local.worker_volume_size
-  volume_type = local.worker_volume_type
+  volume_type = local.volume_type
   security_group_id  = module.sg.worker_security_group_id
   iam_instance_profile_name = module.iam.worker_instance_profile_name
-  user_data = local.worker_userdata
+  #user_data = local.worker_userdata
   name = local.worker_name
-  tags = local.worker_tags
+  tags = local.tags
 }

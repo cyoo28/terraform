@@ -5,7 +5,7 @@ resource "aws_security_group" "bastionSg" {
 
   tags = merge({
     Name = "sg-${var.bastion_name}"
-  }, var.bastion_tags)
+  }, var.tags)
 }
 
 resource "aws_security_group_rule" "bastion_ingress_ssh_from_local" {
@@ -47,7 +47,7 @@ resource "aws_security_group" "controllerSg" {
 
   tags = merge({
     Name = "sg-${var.controller_name}"
-  }, var.controller_tags)
+  }, var.tags)
 }
 
 resource "aws_security_group_rule" "controller_ingress_icmp_from_vpc" {
@@ -107,7 +107,7 @@ resource "aws_security_group" "workerSg" {
 
   tags = merge({
     Name = "${var.worker_name}"
-  }, var.worker_tags)
+  }, var.tags)
 }
 
 resource "aws_security_group_rule" "worker_ingress_icmp_from_vpc" {

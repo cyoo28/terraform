@@ -18,21 +18,9 @@ variable "bastion_name" {
   type        = string
 }
 
-variable "bastion_tags" {
-  description = "Additional tags for the bastion host sg"
-  type        = map(string)
-  default     = {}
-}
-
 variable "controller_name" {
   description = "Name prefix for the control plane sg"
   type        = string
-}
-
-variable "controller_tags" {
-  description = "Additional tags for the control plane sg"
-  type        = map(string)
-  default     = {}
 }
 
 variable "worker_name" {
@@ -40,8 +28,8 @@ variable "worker_name" {
   type        = string
 }
 
-variable "worker_tags" {
-  description = "Additional tags for the worker node sg"
+variable "tags" {
+  description = "Tags for the sgs"
   type        = map(string)
   default     = {}
 }

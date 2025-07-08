@@ -1,13 +1,11 @@
 variable "ami_id" {
   description = "AMI ID for EC2 instance"
   type        = string
-  default = "ami-05ffe3c48a9991133"
 }
 
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
-  default     = "t2.small"
 }
 
 variable "key_name" {
@@ -23,33 +21,32 @@ variable "subnet_id" {
 variable "volume_size" {
   description = "Root volume size in GiB"
   type        = number
-  default     = 8
 }
 
 variable "volume_type" {
   description = "Root volume size in GiB"
   type        = string
-  default     = "gp3"
 }
 
 variable "security_group_id" {
-  description = "Name for worker node security group"
+  description = "Name for control plane security group"
   type        = string
 }
-
 
 variable "iam_instance_profile_name" {
   description = "IAM instance profile name"
   type        = string
+  default     = ""
 }
 
 variable "user_data" {
   description = "Startup script to configure control plane"
   type        = string
+  default     = ""
 }
 
 variable "name" {
-  description = "Name prefix for the worker node"
+  description = "Name prefix for the control plane node"
   type        = string
 }
 
