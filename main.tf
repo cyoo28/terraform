@@ -71,7 +71,7 @@ module "iam" {
 }
 
 # BASTION HOST
-module "ec2" {
+module "bastion_ec2" {
   source = "./modules/ec2"
 
   ami_id = local.ami_id
@@ -86,7 +86,7 @@ module "ec2" {
 }
 
 # CONTROL PLANE EC2
-module "ec2" {
+module "controller_ec2" {
   source = "./modules/ec2"
 
   ami_id = local.ami_id
@@ -103,7 +103,7 @@ module "ec2" {
 }
 
 # WORKER EC2 INSTANCES
-module "ec2" {
+module "worker_ec2" {
   source = "./modules/ec2"
 
   ami_id = local.ami_id
