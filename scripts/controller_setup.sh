@@ -1,7 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-# Kernel modules and sysctl
+# Disable swap (Kubernetes requires this)
+swapoff -a
+sed -i '/ swap / s/^/#/' /etc/fstab
+
+# Enable kernel modules and sysctl
 modprobe overlay
 modprobe br_netfilter
 
@@ -10,24 +14,31 @@ net.bridge.bridge-nf-call-iptables  = 1
 net.ipv4.ip_forward                 = 1
 net.bridge.bridge-nf-call-ip6tables = 1
 EOF
+
 sysctl --system
 
-# Install containerd
-dnf install -y containerd
-mkdir -p /etc/containerd
-containerd config default | tee /etc/containerd/config.toml
-sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
-systemctl enable --now containerd
+# Install Docker
+apt update
+apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
+apt install -y docker.io
+systemctl enable --now docker
 
-# Install Kubernetes packages
-cat <<EOF | tee /etc/yum.repos.d/kubernetes.repo
-[kubernetes]
-name=Kubernetes
-baseurl=https://pkgs.k8s.io/core:/stable:/v1.30/rpm/
-enabled=1
-gpgcheck=1
-gpgkey=https://pkgs.k8s.io/core:/stable:/v1.30/rpm/repodata/repomd.xml.key
-EOF
+# Install Kubernetes repo
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /" > /etc/apt/sources.list.d/kubernetes.list
 
-dnf install -y kubelet kubeadm kubectl
-systemctl enable --now kubelet
+apt update
+apt install -y kubelet kubeadm kubectl
+apt-mark hold kubelet kubeadm kubectl
+
+# Initialize the Kubernetes cluster (only on control plane)
+kubeadm init --pod-network-cidr=192.168.0.0/16
+
+# Set up kubeconfig for ubuntu user (if running as root use /root instead)
+mkdir -p /home/ubuntu/.kube
+cp -i /etc/kubernetes/admin.conf /home/ubuntu/.kube/config
+chown ubuntu:ubuntu /home/ubuntu/.kube/config
+
+# Install Calico CNI
+sudo -u ubuntu kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml

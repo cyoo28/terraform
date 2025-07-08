@@ -12,7 +12,7 @@ locals {
       ManagedBy   = "Terraform"
     }
     # ec2 related variables
-    ami_id = "ami-05ffe3c48a9991133"
+    ami_id = "ami-020cba7c55df1f615"
     volume_type = "gp3"
     # bastion related variables
     bastion_name = "k8-bastion"
@@ -97,7 +97,7 @@ module "controller_ec2" {
   volume_type = local.volume_type
   security_group_id  = module.sg.controller_security_group_id
   iam_instance_profile_name = module.iam.controller_instance_profile_name
-  #user_data = local.controller_userdata
+  user_data = local.controller_userdata
   name = local.controller_name
   tags = local.tags
 }
@@ -114,7 +114,7 @@ module "worker_ec2" {
   volume_type = local.volume_type
   security_group_id  = module.sg.worker_security_group_id
   iam_instance_profile_name = module.iam.worker_instance_profile_name
-  #user_data = local.worker_userdata
+  user_data = local.worker_userdata
   name = local.worker_name
   tags = local.tags
 }

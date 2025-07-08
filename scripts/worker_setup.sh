@@ -1,10 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-# Kernel modules and sysctl
+# Load necessary kernel modules
 modprobe overlay
 modprobe br_netfilter
 
+# Set sysctl params required by Kubernetes networking
 cat <<EOF | tee /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-iptables  = 1
 net.ipv4.ip_forward                 = 1
@@ -12,22 +13,19 @@ net.bridge.bridge-nf-call-ip6tables = 1
 EOF
 sysctl --system
 
-# Install containerd
-dnf install -y containerd
-mkdir -p /etc/containerd
-containerd config default | tee /etc/containerd/config.toml
-sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
-systemctl enable --now containerd
+# Disable swap (required by kubeadm)
+swapoff -a
+sed -i '/ swap / s/^/#/' /etc/fstab
 
-# Install Kubernetes packages
-cat <<EOF | tee /etc/yum.repos.d/kubernetes.repo
-[kubernetes]
-name=Kubernetes
-baseurl=https://pkgs.k8s.io/core:/stable:/v1.30/rpm/
-enabled=1
-gpgcheck=1
-gpgkey=https://pkgs.k8s.io/core:/stable:/v1.30/rpm/repodata/repomd.xml.key
-EOF
+# Install Docker
+apt-get update
+apt-get install -y docker.io
+systemctl enable --now docker
 
-dnf install -y kubelet kubeadm kubectl
+# Add Kubernetes apt repository and install kubelet, kubeadm, kubectl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/kubernetes-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list
+apt-get update
+apt-get install -y kubelet kubeadm kubectl
+apt-mark hold kubelet kubeadm kubectl
 systemctl enable --now kubelet
