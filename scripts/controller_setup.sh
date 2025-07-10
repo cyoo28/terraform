@@ -21,9 +21,15 @@ sysctl --system
 # Install Docker
 apt-get update
 apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
-apt-get install -y docker.io
-systemctl enable --now docker
-apt-mark hold docker.io
+apt-get install -y containerd
+
+# Generate default containerd config and enable systemd cgroup
+mkdir -p /etc/containerd
+containerd config default | tee /etc/containerd/config.toml > /dev/null
+sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+
+systemctl restart containerd
+systemctl enable containerd
 
 # Install Kubernetes repo
 mkdir -p /etc/apt/keyrings
@@ -35,8 +41,8 @@ apt-get install -y kubelet kubeadm kubectl
 apt-mark hold kubelet kubeadm kubectl
 systemctl enable --now kubelet
 
-# Initialize the Kubernetes cluster (only on control plane)
-kubeadm init --pod-network-cidr=10.0.0.0/24
+# Initialize the Kubernetes cluster
+kubeadm init
 
 # Set up kubeconfig for ubuntu user (if running as root use /root instead)
 mkdir -p /home/ubuntu/.kube

@@ -21,9 +21,15 @@ sysctl --system
 # Install Docker
 apt-get update
 apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
-apt-get install -y docker.io
-systemctl enable --now docker
-apt-mark hold docker.io
+apt-get install -y containerd
+
+# Configure containerd with systemd cgroups
+mkdir -p /etc/containerd
+containerd config default | tee /etc/containerd/config.toml > /dev/null
+sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+
+systemctl restart containerd
+systemctl enable containerd
 
 # Install Kubernetes repo
 mkdir -p /etc/apt/keyrings

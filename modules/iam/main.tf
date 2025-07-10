@@ -27,7 +27,15 @@ resource "aws_iam_role_policy" "controller_policy" {
         Action = [
           "elasticloadbalancing:*",
           "ec2:Describe*",
-          "ec2:CreateTags"
+          "ec2:CreateTags",
+          "ec2:CreateSecurityGroup",
+          "ec2:AuthorizeSecurityGroupIngress",
+          "ec2:AuthorizeSecurityGroupEgress",
+          "ec2:RevokeSecurityGroupIngress",
+          "ec2:RevokeSecurityGroupEgress",
+          "ec2:DeleteSecurityGroup",
+          "ec2:ModifyInstanceAttribute",
+          "ec2:AttachNetworkInterface"
         ],
         Resource = "*"
       }
@@ -73,7 +81,12 @@ resource "aws_iam_role_policy" "worker_policy" {
           "ecr:BatchCheckLayerAvailability",
           "ecr:GetDownloadUrlForLayer",
           "ec2:Describe*",
-          "sts:AssumeRole"
+          "sts:AssumeRole",
+          "ec2:AttachNetworkInterface",
+          "ec2:DetachNetworkInterface",
+          "ec2:CreateNetworkInterface",
+          "ec2:DeleteNetworkInterface",
+          "ec2:ModifyNetworkInterfaceAttribute"
         ],
         Resource = "*"
       }
