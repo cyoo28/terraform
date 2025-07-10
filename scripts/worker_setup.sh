@@ -1,6 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
+# Disable swap (Kubernetes requires this)
+swapoff -a
+sed -i '/ swap / s/^/#/' /etc/fstab
+
 # Load necessary kernel modules
 modprobe overlay
 modprobe br_netfilter
@@ -11,20 +15,21 @@ net.bridge.bridge-nf-call-iptables  = 1
 net.ipv4.ip_forward                 = 1
 net.bridge.bridge-nf-call-ip6tables = 1
 EOF
-sysctl --system
 
-# Disable swap (required by kubeadm)
-swapoff -a
-sed -i '/ swap / s/^/#/' /etc/fstab
+sysctl --system
 
 # Install Docker
 apt-get update
+apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
 apt-get install -y docker.io
 systemctl enable --now docker
+apt-mark hold docker.io
 
-# Add Kubernetes apt repository and install kubelet, kubeadm, kubectl
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/kubernetes-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list
+# Install Kubernetes repo
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /" > /etc/apt/sources.list.d/kubernetes.list
+
 apt-get update
 apt-get install -y kubelet kubeadm kubectl
 apt-mark hold kubelet kubeadm kubectl

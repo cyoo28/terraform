@@ -5,10 +5,11 @@ set -euo pipefail
 swapoff -a
 sed -i '/ swap / s/^/#/' /etc/fstab
 
-# Enable kernel modules and sysctl
+# Load necessary kernel modules
 modprobe overlay
 modprobe br_netfilter
 
+# Set sysctl params required by Kubernetes networking
 cat <<EOF | tee /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-iptables  = 1
 net.ipv4.ip_forward                 = 1
@@ -18,22 +19,24 @@ EOF
 sysctl --system
 
 # Install Docker
-apt update
-apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
-apt install -y docker.io
+apt-get update
+apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
+apt-get install -y docker.io
 systemctl enable --now docker
+apt-mark hold docker.io
 
 # Install Kubernetes repo
 mkdir -p /etc/apt/keyrings
 curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /" > /etc/apt/sources.list.d/kubernetes.list
 
-apt update
-apt install -y kubelet kubeadm kubectl
+apt-get update
+apt-get install -y kubelet kubeadm kubectl
 apt-mark hold kubelet kubeadm kubectl
+systemctl enable --now kubelet
 
 # Initialize the Kubernetes cluster (only on control plane)
-kubeadm init --pod-network-cidr=192.168.0.0/16
+kubeadm init --pod-network-cidr=10.0.0.0/24
 
 # Set up kubeconfig for ubuntu user (if running as root use /root instead)
 mkdir -p /home/ubuntu/.kube
