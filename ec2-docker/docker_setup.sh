@@ -5,6 +5,9 @@ dnf update -y
 # Install Docker
 dnf install -y docker
 
+# Install Git
+dnf install -y git
+
 # Enable and start Docker service
 systemctl enable --now docker
 
