@@ -1,6 +1,15 @@
 #!/bin/bash
 set -euo pipefail
 
+# Set hostname to the EC2 private DNS name (required for cloud controller)
+TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+
+HOSTNAME=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" \
+  http://169.254.169.254/latest/meta-data/local-hostname)
+
+hostnamectl set-hostname "$HOSTNAME"
+
 # Disable swap (Kubernetes requires this)
 swapoff -a
 sed -i '/ swap / s/^/#/' /etc/fstab
@@ -39,4 +48,13 @@ echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.
 apt-get update
 apt-get install -y kubelet kubeadm kubectl
 apt-mark hold kubelet kubeadm kubectl
-systemctl enable --now kubelet
+
+mkdir -p /var/lib/kubelet
+
+cat <<EOF > /var/lib/kubelet/config.yaml
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+cloudProvider: external
+EOF
+
+systemctl enable kubelet

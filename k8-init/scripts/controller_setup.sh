@@ -1,6 +1,15 @@
 #!/bin/bash
 set -euo pipefail
 
+# Set hostname to the EC2 private DNS name (required for cloud controller)
+TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+
+HOSTNAME=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" \
+  http://169.254.169.254/latest/meta-data/local-hostname)
+
+hostnamectl set-hostname "$HOSTNAME"
+
 # Disable swap (Kubernetes requires this)
 swapoff -a
 sed -i '/ swap / s/^/#/' /etc/fstab
@@ -23,7 +32,7 @@ apt-get update
 apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
 apt-get install -y containerd
 
-# Generate default containerd config and enable systemd cgroup
+# Configure containerd with systemd cgroups
 mkdir -p /etc/containerd
 containerd config default | tee /etc/containerd/config.toml > /dev/null
 sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
