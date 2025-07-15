@@ -13,3 +13,6 @@ systemctl enable --now docker
 
 # Add ec2-user to docker group
 usermod -aG docker ec2-user
+
+# Reboot the instance
+systemctl reboot
