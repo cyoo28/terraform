@@ -23,7 +23,7 @@ resource "aws_security_group_rule" "bastion_ingress_ssh_from_local" {
   cidr_blocks              = [local.local_cidr]
 }
 
-resource "aws_security_group_rule" "bastion_egress_ssh_from_ec2connect" {
+resource "aws_security_group_rule" "bastion_ingress_ssh_from_ec2connect" {
   description              = "Allow SSH from EC2 Connect"
   type                     = "ingress"
   from_port                = 22

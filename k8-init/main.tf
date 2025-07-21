@@ -14,19 +14,20 @@ locals {
     # ec2 related variables
     ami_id = "ami-020cba7c55df1f615"
     volume_type = "gp3"
-    ec2_tags = merge(local.tags, {"kubernetes.io/cluster/kubernetes" = "owned"})
+    cluster_id="kubernetes"
+    ec2_tags = merge(local.tags, {"kubernetes.io/cluster/${local.cluster_id}" = "owned"})
     # bastion related variables
-    bastion_name = "k8-bastion"
+    bastion_name = "bastion"
     bastion_instance_type = "t2.micro"
     bastion_volume_size = 8
     # controller related variables
     controller_name = "k8-controller"
-    controller_instance_type = "t2.medium"
+    controller_instance_type = "t3.small"
     controller_volume_size = 12
     controller_userdata = file("${path.module}/scripts/controller_setup.sh")
     # worker related variables
     worker_name = "k8-worker"
-    worker_instance_type = "t2.small"
+    worker_instance_type = "t3.small"
     worker_volume_size = 8
     worker_userdata = file("${path.module}/scripts/worker_setup.sh")
     iam_instance_profile_name = "genai-webapp"
@@ -61,6 +62,7 @@ module "bastion_ec2" {
   volume_type = local.volume_type
   security_group_id  = aws_security_group.bastionSg.id
   name = local.bastion_name
+  assign_public_ip = true
   tags = local.tags
 }
 
@@ -80,7 +82,7 @@ module "controller_ec2" {
   name = local.controller_name
   tags = local.ec2_tags
 }
-
+/*
 # WORKER EC2 INSTANCES
 module "worker1_ec2" {
   source = "../modules/ec2"
@@ -113,3 +115,4 @@ module "worker2_ec2" {
   name = "${local.worker_name}-2"
   tags = local.ec2_tags
 }
+*/

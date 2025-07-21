@@ -1,20 +1,31 @@
 #!/bin/bash
 set -euo pipefail
 
-# Set hostname to the EC2 private DNS name (required for cloud controller)
-TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" \
+# Set variables based on existing control-plane
+K8_ENDPOINT=
+K8_TOKEN=
+K8_HASH= 
+
+# Set hostname to the EC2 private DNS name
+AWS_TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" \
   -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 
-HOSTNAME=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" \
+HOSTNAME=$(curl -H "X-aws-ec2-metadata-token: $AWS_TOKEN" \
   http://169.254.169.254/latest/meta-data/local-hostname)
 
 hostnamectl set-hostname "$HOSTNAME"
+systemctl restart systemd-logind.service
 
 # Disable swap (Kubernetes requires this)
 swapoff -a
 sed -i '/ swap / s/^/#/' /etc/fstab
 
-# Load necessary kernel modules
+# Ensure required kernel modules are loaded on every boot
+cat <<EOF | tee /etc/modules-load.d/k8s.conf
+overlay
+br_netfilter
+EOF
+
 modprobe overlay
 modprobe br_netfilter
 
@@ -27,10 +38,12 @@ EOF
 
 sysctl --system
 
-# Install Docker
+# Install containerd
 apt-get update
-apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
-apt-get install -y containerd
+apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release containerd
+
+# Enable Cgroup
+sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
 
 # Configure containerd with systemd cgroups
 mkdir -p /etc/containerd
@@ -41,20 +54,26 @@ systemctl restart containerd
 systemctl enable containerd
 
 # Install Kubernetes repo
-mkdir -p /etc/apt/keyrings
+mkdir -p -m 755 /etc/apt/keyrings
 curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /" > /etc/apt/sources.list.d/kubernetes.list
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | tee /etc/apt/sources.list.d/kubernetes.list
 
 apt-get update
 apt-get install -y kubelet kubeadm kubectl
 apt-mark hold kubelet kubeadm kubectl
 
-mkdir -p /var/lib/kubelet
-
-cat <<EOF > /var/lib/kubelet/config.yaml
-apiVersion: kubelet.config.k8s.io/v1beta1
-kind: KubeletConfiguration
-cloudProvider: external
+cat <<EOF | tee /etc/kubernetes/config.yaml
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: JoinConfiguration
+nodeRegistration:
+  kubeletExtraArgs:
+    cloud-provider: external
+discovery:
+  bootstrapToken:
+    apiServerEndpoint: "${K8_ENDPOINT}"
+    token: ${K8_TOKEN}
+    caCertHashes:
+      - ${K8_HASH}
 EOF
 
-systemctl enable kubelet
+kubeadm join --config /etc/kubernetes/config.yaml

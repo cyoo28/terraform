@@ -50,6 +50,11 @@ variable "name" {
   type        = string
 }
 
+variable "assign_public_ip" {
+  type    = bool
+  default = null
+}
+
 variable "tags" {
   description = "Additional tags"
   type        = map(string)
