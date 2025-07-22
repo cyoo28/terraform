@@ -2,9 +2,9 @@
 set -euo pipefail
 
 # Set variables based on existing control-plane
-K8_ENDPOINT=
-K8_TOKEN=
-K8_HASH= 
+K8_ENDPOINT="10.1.1.123:6443"
+K8_TOKEN="sg3bwv.mql5r1pwg2rut96b"
+K8_HASH= "sha256:ccb53523397d29e4965591a296af98af018090ac0f6a56d9d8618450572d670a"
 
 # Set hostname to the EC2 private DNS name
 AWS_TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" \

@@ -118,7 +118,7 @@ cat <<'EOF'> /home/ubuntu/addons-setup.sh
 set -e
 
 # Install AWS cloud provider
-kubectl apply -k 'github.com/kubernetes/cloud-provider-aws/tree/master/examples/existing-cluster/base?ref=master'
+kubectl apply -k 'github.com/kubernetes/cloud-provider-aws/examples/existing-cluster/base/?ref=master'
                   
 # Install Calico CNI
 kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/calico.yaml

@@ -72,33 +72,3 @@ resource "aws_security_group_rule" "controller_egress_all_to_all" {
   security_group_id        = aws_security_group.controllerSg.id
   cidr_blocks              = ["0.0.0.0/0"]
 }
-
-resource "aws_security_group" "workerSg" {
-  name        = "${local.worker_name}-sg"
-  description = "Security group for Kubernetes worker node"
-  vpc_id      = local.vpc_id
-
-  tags = merge({
-    Name = "${local.worker_name}"
-  }, local.tags)
-}
-
-resource "aws_security_group_rule" "worker_ingress_all_from_vpc" {
-  description              = "Allow all traffic from vpc"
-  type                     = "ingress"
-  from_port                = 0
-  to_port                  = 0
-  protocol                 = "-1"
-  security_group_id        = aws_security_group.workerSg.id
-  cidr_blocks              = [local.vpc_cidr]
-}
-
-resource "aws_security_group_rule" "worker_egress_all_to_all" {
-  description              = "Allow all outbound"
-  type                     = "egress"
-  from_port                = 0
-  to_port                  = 0
-  protocol                 = "-1"
-  security_group_id        = aws_security_group.workerSg.id
-  cidr_blocks              = ["0.0.0.0/0"]
-}
