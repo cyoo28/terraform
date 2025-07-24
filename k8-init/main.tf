@@ -18,10 +18,12 @@ locals {
     ec2_tags = merge(local.tags, {"kubernetes.io/cluster/${local.cluster_id}" = "owned"})
     # bastion related variables
     bastion_name = "bastion"
+    bastion_tags = merge(local.tags, {"Name" = "${local.bastion_name}"})
     bastion_instance_type = "t2.micro"
     bastion_volume_size = 8
     # controller related variables
     controller_name = "k8-controller"
+    controller_tags = merge(local.ec2_tags, {"Name" = "${local.controller_name}"})
     controller_instance_type = "t3.small"
     controller_volume_size = 12
     controller_userdata = file("${path.module}/scripts/controller_setup.sh")
@@ -55,9 +57,8 @@ module "bastion_ec2" {
   volume_size = local.bastion_volume_size
   volume_type = local.volume_type
   security_group_id  = aws_security_group.bastionSg.id
-  name = local.bastion_name
   assign_public_ip = true
-  tags = local.tags
+  tags = local.bastion_tags
 }
 
 # CONTROL PLANE EC2
@@ -73,6 +74,5 @@ module "controller_ec2" {
   security_group_id  = aws_security_group.controllerSg.id
   iam_instance_profile_name = aws_iam_instance_profile.controller_profile.name
   user_data = local.controller_userdata
-  name = local.controller_name
-  tags = local.ec2_tags
+  tags = local.controller_tags
 }

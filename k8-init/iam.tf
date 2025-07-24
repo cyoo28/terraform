@@ -49,6 +49,7 @@ resource "aws_iam_role_policy" "controller_policy" {
             "ec2:DetachVolume",
             "ec2:RevokeSecurityGroupIngress",
             "ec2:DescribeVpcs",
+            "ec2:DescribeLaunchTemplateVersions",
             "elasticloadbalancing:AddTags",
             "elasticloadbalancing:AttachLoadBalancerToSubnets",
             "elasticloadbalancing:ApplySecurityGroupsToLoadBalancer",
@@ -80,7 +81,15 @@ resource "aws_iam_role_policy" "controller_policy" {
             "elasticloadbalancing:DeregisterTargets",
             "elasticloadbalancing:SetLoadBalancerPoliciesOfListener",
             "iam:CreateServiceLinkedRole",
-            "kms:DescribeKey"
+            "kms:DescribeKey",
+            "autoscaling:DescribeAutoScalingGroups",
+            "autoscaling:DescribeAutoScalingInstances",
+            "autoscaling:SetDesiredCapacity",
+            "autoscaling:TerminateInstanceInAutoScalingGroup",
+            "ecr:GetAuthorizationToken",
+            "ecr:BatchCheckLayerAvailability",
+            "ecr:GetDownloadUrlForLayer",
+            "ecr:BatchGetImage"
         ],
         Resource = "*"
       }

@@ -60,8 +60,27 @@ apt-get update
 apt-get install -y kubelet kubeadm kubectl
 apt-mark hold kubelet kubeadm kubectl
 
+# Install ecr-credential-provider and configure it
+curl -Lo /usr/bin/ecr-credential-provider https://storage.googleapis.com/k8s-staging-provider-aws/releases/v1.31.6-4-g3ffac90/linux/amd64/ecr-credential-provider-linux-amd64
+chmod +x /usr/bin/ecr-credential-provider
+
+cat <<EOT > /etc/kubernetes/image-credential-provider-config.yaml
+apiVersion: kubelet.config.k8s.io/v1
+kind: CredentialProviderConfig
+providers:
+- name: ecr-credential-provider
+  matchImages:
+  - "*.dkr.ecr.*.amazonaws.com"
+  apiVersion: credentialprovider.kubelet.k8s.io/v1
+  defaultCacheDuration: "0"
+EOT
+
+echo 'KUBELET_EXTRA_ARGS="--image-credential-provider-config=/etc/kubernetes/image-credential-provider-config.yaml --image-credential-provider-bin-dir=/usr/bin"' | tee -a /etc/default/kubelet
+systemctl daemon-reexec
+systemctl restart kubelet
+
 # Create a config file
-cat <<EOF | sudo tee /etc/kubernetes/kubeadmn-custom.yaml
+cat <<EOF | sudo tee /etc/kubernetes/kubeadm-custom.yaml
 apiVersion: kubeadm.k8s.io/v1beta3
 kind: InitConfiguration
 nodeRegistration:
@@ -86,43 +105,112 @@ networking:
 EOF
 
 # Initialize the Kubernetes cluster
-sudo kubeadm init --config /etc/kubernetes/kubeadmn-custom.yaml
+sudo kubeadm init --config /etc/kubernetes/kubeadm-custom.yaml
 
 # Set up kubeconfig for ubuntu user (if running as root use /root instead)
 mkdir -p /home/ubuntu/.kube
 cp -i /etc/kubernetes/admin.conf /home/ubuntu/.kube/config
 chown -R ubuntu:ubuntu /home/ubuntu/.kube
 
-# Create a script to setup the cluster
-cat <<'EOF'> /home/ubuntu/cluster-setup.sh
+# Create a script for join command
+cat <<'EOF'> /home/ubuntu/join-setup.sh
 #!/bin/bash
 set -e
 
 # Print the kubeadm join command for worker nodes
 echo "Worker node join command:"
 kubeadm token create --ttl 0 --print-join-command
-
-# Create the role binding and the user
-kubectl create clusterrolebinding admin-role --clusterrole=cluster-admin --user=admin
-
-# Generate a kube config file
-sudo kubeadm kubeconfig user --client-name=admin | tee /home/ubuntu/admin.conf
 EOF
 
-chmod +x /home/ubuntu/cluster-setup.sh
-chown ubuntu:ubuntu /home/ubuntu/cluster-setup.sh
+chmod +x /home/ubuntu/join-setup.sh
+chown ubuntu:ubuntu /home/ubuntu/join-setup.sh
 
 # Create a script to add addons
-cat <<'EOF'> /home/ubuntu/addons-setup.sh
+cat <<'EOF'> /home/ubuntu/addon-setup.sh
 #!/bin/bash
 set -e
 
 # Install AWS cloud provider
 kubectl apply -k 'github.com/kubernetes/cloud-provider-aws/examples/existing-cluster/base/?ref=master'
                   
-# Install Calico CNI
-kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/calico.yaml
+# Install Weave Net CNI
+kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
 EOF
 
-chmod +x /home/ubuntu/addons-setup.sh
-chown ubuntu:ubuntu /home/ubuntu/addons-setup.sh
+chmod +x /home/ubuntu/addon-setup.sh
+chown ubuntu:ubuntu /home/ubuntu/addon-setup.sh
+
+# Create script to start kube2iam
+cat <<EOF > /home/ubuntu/kube2iam.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kube2iam
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kube2iam
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces", "pods"]
+    verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kube2iam
+subjects:
+  - kind: ServiceAccount
+    name: kube2iam
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: kube2iam
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kube2iam
+  namespace: kube-system
+  labels:
+    app: kube2iam
+spec:
+  selector:
+    matchLabels:
+      app: kube2iam
+  template:
+    metadata:
+      labels:
+        app: kube2iam
+    spec:
+      serviceAccountName: kube2iam
+      hostNetwork: true
+      containers:
+        - name: kube2iam
+          image: docker.io/jtblin/kube2iam:latest
+          imagePullPolicy: Always
+          args:
+            - "--app-port=8181"
+            - "--auto-discover-base-arn"
+            - "--host-ip=\$(HOST_IP)"
+            - "--host-interface=ens5"
+            - "--iptables"
+            - "--verbose"
+          env:
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          ports:
+            - containerPort: 8181
+              hostPort: 8181
+              name: http
+          securityContext:
+            privileged: true
+EOF
+
+systemctl enable kubelet
+systemctl restart kubelet
