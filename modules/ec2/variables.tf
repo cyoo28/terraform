@@ -45,11 +45,6 @@ variable "user_data" {
   default     = ""
 }
 
-variable "name" {
-  description = "Name prefix for the control plane node"
-  type        = string
-}
-
 variable "assign_public_ip" {
   type    = bool
   default = null

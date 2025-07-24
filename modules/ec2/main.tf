@@ -13,7 +13,5 @@ resource "aws_instance" "ec2" {
     volume_type = var.volume_type
   }
 
-  tags = merge({
-    Name = "${var.name}"
-  }, var.tags)
+  tags = var.tags
 }
