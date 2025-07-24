@@ -204,6 +204,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: AWS_REGION
+              value: us-east-1
           ports:
             - containerPort: 8181
               hostPort: 8181
