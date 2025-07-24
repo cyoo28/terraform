@@ -33,7 +33,8 @@ resource "aws_iam_role_policy" "worker_policy" {
           "ecr:GetRepositoryPolicy",
           "ecr:DescribeRepositories",
           "ecr:ListImages",
-          "ecr:BatchGetImage"
+          "ecr:BatchGetImage",
+          "sts:AssumeRole"
         ],
         Resource = "*"
       }

@@ -2,9 +2,9 @@
 set -euo pipefail
 
 # Set variables based on existing control-plane
-K8_ENDPOINT="10.1.1.123:6443"
-K8_TOKEN="sg3bwv.mql5r1pwg2rut96b"
-K8_HASH= "sha256:ccb53523397d29e4965591a296af98af018090ac0f6a56d9d8618450572d670a"
+K8_ENDPOINT="10.1.1.65:6443"
+K8_TOKEN="6wwsqh.5rm3hmturbk9uxda"
+K8_HASH="sha256:4b9ec01c6d193b833c1a63f081df1db10d56712b596c8f78e80820529d32d8a7"
 
 # Set hostname to the EC2 private DNS name
 AWS_TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" \
@@ -36,19 +36,19 @@ net.ipv4.ip_forward                 = 1
 net.bridge.bridge-nf-call-ip6tables = 1
 EOF
 
+# Apply sysctl params without reboot
 sysctl --system
 
 # Install containerd
 apt-get update
 apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release containerd
 
-# Enable Cgroup
-sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
-
-# Configure containerd with systemd cgroups
+# Configure containerd
 mkdir -p /etc/containerd
 containerd config default | tee /etc/containerd/config.toml > /dev/null
-sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+
+# Enable Cgroup
+sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
 
 systemctl restart containerd
 systemctl enable containerd
@@ -62,6 +62,26 @@ apt-get update
 apt-get install -y kubelet kubeadm kubectl
 apt-mark hold kubelet kubeadm kubectl
 
+# Install ecr-credential-provider and configure it
+curl -Lo /usr/bin/ecr-credential-provider https://storage.googleapis.com/k8s-staging-provider-aws/releases/v1.31.6-4-g3ffac90/linux/amd64/ecr-credential-provider-linux-amd64
+chmod +x /usr/bin/ecr-credential-provider
+
+cat <<EOT > /etc/kubernetes/image-credential-provider-config.yaml
+apiVersion: kubelet.config.k8s.io/v1
+kind: CredentialProviderConfig
+providers:
+- name: ecr-credential-provider
+  matchImages:
+  - "*.dkr.ecr.*.amazonaws.com"
+  apiVersion: credentialprovider.kubelet.k8s.io/v1
+  defaultCacheDuration: "0"
+EOT
+
+echo 'KUBELET_EXTRA_ARGS="--image-credential-provider-config=/etc/kubernetes/image-credential-provider-config.yaml --image-credential-provider-bin-dir=/usr/bin"' | tee -a /etc/default/kubelet
+systemctl daemon-reexec
+systemctl restart kubelet
+
+# Create a config file
 cat <<EOF | tee /etc/kubernetes/config.yaml
 apiVersion: kubeadm.k8s.io/v1beta3
 kind: JoinConfiguration
@@ -77,3 +97,6 @@ discovery:
 EOF
 
 kubeadm join --config /etc/kubernetes/config.yaml
+
+systemctl enable kubelet
+systemctl restart kubelet
