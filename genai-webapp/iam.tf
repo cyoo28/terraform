@@ -40,19 +40,19 @@ resource "aws_iam_role_policy" "webapp_policy" {
       {
         Effect = "Allow",
         Action = [
+            // EC2 Describe
             "ec2:DescribeInstances",
             "ec2:DescribeRegions",
+            // ECR Core
             "ecr:GetAuthorizationToken",
             "ecr:BatchCheckLayerAvailability",
             "ecr:GetDownloadUrlForLayer",
-            "ecr:GetRepositoryPolicy",
-            "ecr:DescribeRepositories",
-            "ecr:ListImages",
             "ecr:BatchGetImage",
+            // Webapp permissions
             "ses:SendEmail",
-            "secretsmanager:GetSecretValue",
             "kms:Decrypt",
-            "ssm:GetParameter"
+            "secretsmanager:GetSecretValue",
+            "ssm:GetParameter",
         ],
         Resource = "*"
       }
