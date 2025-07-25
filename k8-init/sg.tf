@@ -23,16 +23,6 @@ resource "aws_security_group_rule" "bastion_ingress_ssh_from_local" {
   cidr_blocks              = [local.local_cidr]
 }
 
-resource "aws_security_group_rule" "bastion_ingress_ssh_from_ec2connect" {
-  description              = "Allow SSH from EC2 Connect"
-  type                     = "ingress"
-  from_port                = 22
-  to_port                  = 22
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.bastionSg.id
-  cidr_blocks              = ["18.206.107.24/29"]
-}
-
 resource "aws_security_group_rule" "bastion_egress_all_to_all" {
   description              = "Allow https outbound"
   type                     = "egress"
@@ -53,12 +43,62 @@ resource "aws_security_group" "controllerSg" {
   }, local.tags)
 }
 
-resource "aws_security_group_rule" "controller_ingress_all_from_vpc" {
-  description              = "Allow all traffic from vpc"
+resource "aws_security_group_rule" "controller_ingress_ssh_from_bastion" {
+  description              = "Allow ssh from bastion"
   type                     = "ingress"
-  from_port                = 0
-  to_port                  = 0
-  protocol                 = "-1"
+  from_port                = 22
+  to_port                  = 22
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.controllerSg.id
+  source_security_group_id = aws_security_group.bastionSg.id
+}
+
+resource "aws_security_group_rule" "controller_ingress_etcd_from_vpc" {
+  description              = "Allow etdc server traffic from vpc"
+  type                     = "ingress"
+  from_port                = 2379
+  to_port                  = 2380
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.controllerSg.id
+  cidr_blocks              = [local.vpc_cidr]
+}
+
+resource "aws_security_group_rule" "controller_ingress_kubernetes_from_vpc" {
+  description              = "Allow kubernetes server traffic from vpc"
+  type                     = "ingress"
+  from_port                = 6443
+  to_port                  = 6443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.controllerSg.id
+  cidr_blocks              = [local.vpc_cidr]
+}
+
+resource "aws_security_group_rule" "controller_ingress_kubelet_from_vpc" {
+  description              = "Allow kubelet traffic from vpc"
+  type                     = "ingress"
+  from_port                = 10250
+  to_port                  = 10259
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.controllerSg.id
+  cidr_blocks              = [local.vpc_cidr]
+}
+
+resource "aws_security_group_rule" "controller_ingress_weave1_from_vpc" {
+  description              = "Allow weavenet traffic from vpc"
+  type                     = "ingress"
+  from_port                = 6783
+  to_port                  = 6784
+  protocol                 = "udp"
+  security_group_id        = aws_security_group.controllerSg.id
+  cidr_blocks              = [local.vpc_cidr]
+}
+
+resource "aws_security_group_rule" "controller_ingress_weave2_from_vpc" {
+  description              = "Allow weavenet traffic from vpc"
+  type                     = "ingress"
+  from_port                = 6783
+  to_port                  = 6784
+  protocol                 = "tcp"
   security_group_id        = aws_security_group.controllerSg.id
   cidr_blocks              = [local.vpc_cidr]
 }
