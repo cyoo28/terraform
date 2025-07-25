@@ -50,9 +50,10 @@ resource "aws_iam_role_policy" "webapp_policy" {
             "ecr:BatchGetImage",
             // Webapp permissions
             "ses:SendEmail",
+            "ssm:GetParameter",
             "kms:Decrypt",
             "secretsmanager:GetSecretValue",
-            "ssm:GetParameter",
+            
         ],
         Resource = "*"
       }
