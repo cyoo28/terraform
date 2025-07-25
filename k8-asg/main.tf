@@ -23,6 +23,7 @@ locals {
     worker_volume_size = 8
     worker_userdata = file("${path.module}/scripts/worker_setup.sh")
     iam_instance_profile_name = "genai-webapp"
+    bastion_sg = "bastion-sg"
 }
 
 data "aws_vpc" "ix_vpc" {
@@ -32,6 +33,17 @@ data "aws_vpc" "ix_vpc" {
 data "aws_key_pair" "existing" {
   key_name = local.key_name
 }
+
+data "aws_security_group" "bastionSg" {
+  filter {
+    name   = "group-name"
+    values = [local.bastion_sg]
+  }
+  filter {
+    name   = "vpc-id"
+    values = [local.vpc_id]
+  }
+} 
 
 /*
 # WORKER EC2 INSTANCES

@@ -1,5 +1,4 @@
 locals {
-  #vpc_id = data.aws_vpc.ix_vpc.id
   vpc_cidr = data.aws_vpc.ix_vpc.cidr_block
 }
 
@@ -13,12 +12,52 @@ resource "aws_security_group" "workerSg" {
   }, local.tags)
 }
 
-resource "aws_security_group_rule" "worker_ingress_all_from_vpc" {
-  description              = "Allow all traffic from vpc"
+resource "aws_security_group_rule" "worker_ingress_ssh_from_bastion" {
+  description              = "Allow ssh from bastion"
   type                     = "ingress"
-  from_port                = 0
-  to_port                  = 0
-  protocol                 = "-1"
+  from_port                = 22
+  to_port                  = 22
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.workerSg.id
+  source_security_group_id = data.aws_security_group.bastionSg.id
+}
+
+resource "aws_security_group_rule" "worker_ingress_kubelet_from_vpc" {
+  description              = "Allow kubelet api from vpc"
+  type                     = "ingress"
+  from_port                = 10250
+  to_port                  = 10250
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.workerSg.id
+  cidr_blocks              = [local.vpc_cidr]
+}
+
+resource "aws_security_group_rule" "worker_ingress_nodeport_from_vpc" {
+  description              = "Allow nodeport service traffic from vpc"
+  type                     = "ingress"
+  from_port                = 30000
+  to_port                  = 30767
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.workerSg.id
+  cidr_blocks              = [local.vpc_cidr]
+}
+
+resource "aws_security_group_rule" "worker_ingress_weave1_from_vpc" {
+  description              = "Allow weavenet traffic from vpc"
+  type                     = "ingress"
+  from_port                = 6783
+  to_port                  = 6784
+  protocol                 = "udp"
+  security_group_id        = aws_security_group.workerSg.id
+  cidr_blocks              = [local.vpc_cidr]
+}
+
+resource "aws_security_group_rule" "worker_ingress_weave2_from_vpc" {
+  description              = "Allow weavenet traffic from vpc"
+  type                     = "ingress"
+  from_port                = 6783
+  to_port                  = 6784
+  protocol                 = "tcp"
   security_group_id        = aws_security_group.workerSg.id
   cidr_blocks              = [local.vpc_cidr]
 }
