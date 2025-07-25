@@ -195,15 +195,11 @@ spec:
           args:
             - "--app-port=8181"
             - "--auto-discover-base-arn"
-            - "--host-ip=\$(HOST_IP)"
-            - "--host-interface=ens5"
+            - "--host-ip=127.0.0.1"
+            - "--host-interface=weave"
             - "--iptables"
             - "--verbose"
           env:
-            - name: HOST_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
             - name: AWS_REGION
               value: us-east-1
           ports:
@@ -213,6 +209,8 @@ spec:
           securityContext:
             privileged: true
 EOF
+
+chown ubuntu:ubuntu /home/ubuntu/kube2iam.yaml
 
 systemctl enable kubelet
 systemctl restart kubelet
