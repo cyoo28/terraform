@@ -25,16 +25,16 @@ resource "aws_iam_role_policy" "worker_policy" {
       {
         Effect = "Allow",
         Action = [
+          // EC2 Describe
           "ec2:DescribeInstances",
           "ec2:DescribeRegions",
+          // ECR Core
           "ecr:GetAuthorizationToken",
           "ecr:BatchCheckLayerAvailability",
           "ecr:GetDownloadUrlForLayer",
-          "ecr:GetRepositoryPolicy",
-          "ecr:DescribeRepositories",
-          "ecr:ListImages",
           "ecr:BatchGetImage",
-          "sts:AssumeRole"
+          // Assume role
+          "sts:AssumeRole",
         ],
         Resource = "*"
       }

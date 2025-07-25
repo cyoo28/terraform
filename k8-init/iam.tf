@@ -25,7 +25,7 @@ resource "aws_iam_role_policy" "controller_policy" {
       {
         Effect = "Allow",
         Action = [
-            // EC2 Metadata
+            // EC2 Describe
             "ec2:DescribeAvailabilityZones",
             "ec2:DescribeInstances",
             "ec2:DescribeLaunchTemplateVersions",
@@ -34,7 +34,7 @@ resource "aws_iam_role_policy" "controller_policy" {
             "ec2:DescribeSubnets",
             "ec2:DescribeSecurityGroups",
             "ec2:DescribeVpcs",
-            // Security Group Operations
+            // EC2 Security Group
             "ec2:AuthorizeSecurityGroupIngress",
             "ec2:AuthorizeSecurityGroupEgress",
             "ec2:RevokeSecurityGroupIngress",
