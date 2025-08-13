@@ -1,5 +1,5 @@
 resource "aws_eks_cluster" "test_cluster" {
-  name = "test-cluster"
+  name = "web-platform-cluster"
   # Don't include version parameter so that version=latest
   role_arn = "arn:aws:iam::026090555438:role/eks-cluster-role"
   bootstrap_self_managed_addons = false
