@@ -83,6 +83,7 @@ systemctl restart kubelet
 cat <<EOF | sudo tee /etc/kubernetes/kubeadm-custom.yaml
 apiVersion: kubeadm.k8s.io/v1beta3
 kind: InitConfiguration
+clusterName: my-cluster
 nodeRegistration:
   kubeletExtraArgs:
     cloud-provider: external
