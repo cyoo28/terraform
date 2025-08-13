@@ -42,6 +42,11 @@ resource "aws_iam_role_policy" "worker_policy" {
   })
 }
 
+resource "aws_iam_role_policy_attachment" "ssm_attach" {
+  role       = aws_iam_role.worker_role.id
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 resource "aws_iam_instance_profile" "worker_profile" {
   name = "${local.worker_name}-profile"
   role = aws_iam_role.worker_role.name

@@ -72,6 +72,11 @@ resource "aws_iam_role_policy" "controller_policy" {
   })
 }
 
+resource "aws_iam_role_policy_attachment" "ssm_attach" {
+  role       = aws_iam_role.controller_role.id
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 resource "aws_iam_instance_profile" "controller_profile" {
   name = "${local.controller_name}-profile"
   role = aws_iam_role.controller_role.name
