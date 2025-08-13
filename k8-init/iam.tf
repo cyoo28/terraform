@@ -65,8 +65,6 @@ resource "aws_iam_role_policy" "controller_policy" {
             "elasticloadbalancing:ModifyListener",
             "elasticloadbalancing:ModifyLoadBalancerAttributes",
             "elasticloadbalancing:ModifyTargetGroup",
-            // IAM
-            "iam:CreateServiceLinkedRole",
         ],
         Resource = "*"
       }
