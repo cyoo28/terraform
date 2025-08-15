@@ -26,9 +26,8 @@ module "docker_ec2" {
   subnet_id = local.subnet_id
   volume_size = local.volume_size
   volume_type = local.volume_type
-  security_group_id  = local.security_group_id
+  security_group_ids = [local.security_group_id]
   iam_instance_profile_name = aws_iam_instance_profile.docker_profile.name
   user_data = local.userdata
-  name = "${local.name}"
-  tags = local.tags
+  tags = merge(local.tags, {"Name" = "${local.name}"})
 }

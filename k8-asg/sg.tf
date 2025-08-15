@@ -12,16 +12,6 @@ resource "aws_security_group" "workerSg" {
   }, local.tags)
 }
 
-resource "aws_security_group_rule" "worker_ingress_ssh_from_bastion" {
-  description              = "Allow ssh from bastion"
-  type                     = "ingress"
-  from_port                = 22
-  to_port                  = 22
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.workerSg.id
-  source_security_group_id = data.aws_security_group.bastionSg.id
-}
-
 resource "aws_security_group_rule" "worker_ingress_kubelet_from_vpc" {
   description              = "Allow kubelet api from vpc"
   type                     = "ingress"

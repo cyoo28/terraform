@@ -28,9 +28,9 @@ variable "volume_type" {
   type        = string
 }
 
-variable "security_group_id" {
-  description = "Name for control plane security group"
-  type        = string
+variable "security_group_ids" {
+  description = "Name for control plane security group(s)"
+  type        = list(string)
 }
 
 variable "iam_instance_profile_name" {

@@ -50,7 +50,7 @@ module "controller_ec2" {
   subnet_id = local.priv_subnet_id_1
   volume_size = local.controller_volume_size
   volume_type = local.volume_type
-  security_group_id  = aws_security_group.controllerSg.id
+  security_group_ids  = [aws_security_group.controllerSg.id]
   iam_instance_profile_name = aws_iam_instance_profile.controller_profile.name
   user_data = local.controller_userdata
   tags = local.controller_tags

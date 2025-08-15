@@ -56,7 +56,7 @@ module "worker_ec2" {
   subnet_id = local.priv_subnet_id_1
   volume_size = local.worker_volume_size
   volume_type = local.volume_type
-  security_group_id  = aws_security_group.workerSg.id
+  security_group_ids  = [aws_security_group.workerSg.id]
   iam_instance_profile_name = aws_iam_instance_profile.worker_profile.name
   tags = local.ec2_tags
 }*/
