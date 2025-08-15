@@ -3,6 +3,7 @@ locals {
     pub_subnet_id = "subnet-07e44b3cb81f451e0"
     key_name = "ix-key"
     local_cidr = "98.110.49.120/32"
+    cluster_sg_id = "sg-0b7ef0ba0903fec0a"
     tags = {
       Project     = "genai-webapp"
       Environment = "dev"
@@ -37,7 +38,7 @@ module "bastion_admin" {
   subnet_id = local.pub_subnet_id
   volume_size = local.volume_size
   volume_type = local.volume_type
-  security_group_id  = aws_security_group.bastionSg.id
+  security_group_ids = [aws_security_group.bastionSg.id, local.cluster_sg_id]
   iam_instance_profile_name = aws_iam_instance_profile.bastion_admin_profile.name
   user_data = local.userdata
   tags = merge(local.tags, {"Name" = "${local.bastion_name}-admin"})
@@ -53,8 +54,8 @@ module "bastion_dev" {
   subnet_id = local.pub_subnet_id
   volume_size = local.volume_size
   volume_type = local.volume_type
-  security_group_id  = aws_security_group.bastionSg.id
-  iam_instance_profile_name = aws_iam_instance_profile.dev_admin_profile.name
+  security_group_ids = [aws_security_group.bastionSg.id, local.cluster_sg_id]
+  iam_instance_profile_name = aws_iam_instance_profile.bastion_dev_profile.name
   user_data = local.userdata
   tags = merge(local.tags, {"Name" = "${local.bastion_name}-dev"})
 }
