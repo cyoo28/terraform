@@ -1,6 +1,9 @@
 # Terraform
 This repo contains my terraform directories that I use for various projects in AWS. You can read a description of these projects below:
 
+## bastion
+This directory is used to create bastion hosts used to connect to the eks cluster created by the eks directory. This is necessary because the eks api is set to private and can only be accessed from within the vpc.
+
 ## docker
 This directory is used to create an EC2 instance that is capable of running Docker.
 
