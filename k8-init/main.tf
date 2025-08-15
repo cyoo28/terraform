@@ -16,12 +16,6 @@ locals {
     volume_type = "gp3"
     cluster_id="kubernetes"
     ec2_tags = merge(local.tags, {"kubernetes.io/cluster/${local.cluster_id}" = "owned"})
-    # bastion related variables
-    bastion_name = "bastion"
-    bastion_tags = merge(local.tags, {"Name" = "${local.bastion_name}"})
-    bastion_instance_type = "t2.micro"
-    bastion_volume_size = 8
-    # controller related variables
     controller_name = "k8-controller"
     controller_tags = merge(local.ec2_tags, {"Name" = "${local.controller_name}"})
     controller_instance_type = "t3.small"
@@ -44,21 +38,6 @@ data "aws_subnet" "private_subnet" {
 
 data "aws_key_pair" "existing" {
   key_name = local.key_name
-}
-
-# BASTION HOST
-module "bastion_ec2" {
-  source = "../modules/ec2"
-
-  ami_id = local.ami_id
-  instance_type = local.bastion_instance_type
-  key_name = local.key_name
-  subnet_id = local.pub_subnet_id
-  volume_size = local.bastion_volume_size
-  volume_type = local.volume_type
-  security_group_id  = aws_security_group.bastionSg.id
-  assign_public_ip = true
-  tags = local.bastion_tags
 }
 
 # CONTROL PLANE EC2
