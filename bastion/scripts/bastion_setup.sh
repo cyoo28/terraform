@@ -13,9 +13,13 @@ unzip /tmp/awscliv2.zip -d /tmp
 /tmp/aws/install
 
 # Install kubectl
-KUBECTL_VERSION=$(curl -s https://dl.k8s.io/release/stable.txt)
-curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
-install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+mkdir -p -m 755 /etc/apt/keyrings
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | tee /etc/apt/sources.list.d/kubernetes.list
+
+apt-get update
+apt-get install -y kubectl
+apt-mark hold kubectl
 
 # Install jq
 apt-get install -y jq
